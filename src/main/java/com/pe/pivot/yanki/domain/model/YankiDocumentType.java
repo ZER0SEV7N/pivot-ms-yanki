@@ -5,6 +5,6 @@ package com.pe.pivot.yanki.domain.model;
  */
 public enum YankiDocumentType {
   DNI,
-  CE,
+  CEX,
   PASSPORT
 }
