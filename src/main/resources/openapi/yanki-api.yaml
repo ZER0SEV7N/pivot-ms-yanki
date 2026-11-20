@@ -1,0 +1,465 @@
+openapi: 3.0.3
+info:
+  title: Pivot Banking System - Yanki Mobile Wallet API
+  description: |
+    Event-Driven Reactive Mobile Wallet Microservice (`pivot-ms-yanki`).
+    - Allows registration without being a bank customer (`DNI`, `CEX`, `PASSPORT`, `phoneNumber`, `imei`, `email`).
+    - Supports optional linking to a bank Debit Card (charges/credits only its primary account via Kafka).
+    - Zero outbound REST calls to other microservices; communicates strictly via Apache Kafka and caches wallet lookups in Redis.
+  version: 1.0.0
+servers:
+  - url: http://localhost:8086/api/v1
+    description: Local Development Server (ms-yanki)
+
+tags:
+  - name: Yanki Wallets
+    description: Mobile wallet registration, lookup, card linking, and lifecycle management
+  - name: Yanki Payments
+    description: Phone-to-phone payments orchestrated asynchronously via Apache Kafka
+
+paths:
+  /yanki/wallets:
+    post:
+      tags:
+        - Yanki Wallets
+      summary: Register a new Yanki mobile wallet
+      operationId: createWallet
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/YankiWalletRequest'
+      responses:
+        '201':
+          description: Mobile wallet created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/YankiWalletResponse'
+        '400':
+          description: Validation or business rule error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Phone number, IMEI, or document number already registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    get:
+      tags:
+        - Yanki Wallets
+      summary: Retrieve all Yanki mobile wallets
+      operationId: getAllWallets
+      responses:
+        '200':
+          description: Stream of all mobile wallets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/YankiWalletResponse'
+
+  /yanki/wallets/{phoneNumber}:
+    get:
+      tags:
+        - Yanki Wallets
+      summary: Get Yanki wallet by phone number (Redis Cache-Aside)
+      operationId: getWalletByPhoneNumber
+      parameters:
+        - name: phoneNumber
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Wallet found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/YankiWalletResponse'
+        '404':
+          description: Wallet not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      tags:
+        - Yanki Wallets
+      summary: Update wallet contact details (email, IMEI, or status)
+      operationId: updateWallet
+      parameters:
+        - name: phoneNumber
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/YankiWalletUpdateRequest'
+      responses:
+        '200':
+          description: Wallet updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/YankiWalletResponse'
+        '404':
+          description: Wallet not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      tags:
+        - Yanki Wallets
+      summary: Soft delete (logically close) a Yanki wallet
+      operationId: deleteWallet
+      parameters:
+        - name: phoneNumber
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Wallet logically closed (status set to CLOSED)
+        '404':
+          description: Wallet not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /yanki/wallets/{phoneNumber}/link-card:
+    patch:
+      tags:
+        - Yanki Wallets
+      summary: Link a bank Debit Card ID to a Yanki wallet
+      operationId: linkDebitCard
+      parameters:
+        - name: phoneNumber
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LinkDebitCardRequest'
+      responses:
+        '200':
+          description: Debit card linked to wallet successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/YankiWalletResponse'
+        '404':
+          description: Wallet not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /yanki/wallets/{phoneNumber}/top-up:
+    patch:
+      tags:
+        - Yanki Wallets
+      summary: Add funds to an unlinked Yanki wallet balance
+      operationId: topUpWallet
+      parameters:
+        - name: phoneNumber
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TopUpRequest'
+      responses:
+        '200':
+          description: Wallet balance topped up successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/YankiWalletResponse'
+
+  /yanki/payments:
+    post:
+      tags:
+        - Yanki Payments
+      summary: Send a Yanki payment by phone number
+      description: |
+        - If neither wallet has a linked debit card, settles wallet-to-wallet immediately and publishes `COMPLETED` to `yanki.payment.result` for `ms-transaction`.
+        - If either wallet has a linked debit card, records `PENDING` and publishes `yanki.payment.requested` to Kafka so `ms-account` settles the primary account asynchronously.
+      operationId: sendPayment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/YankiPaymentRequest'
+      responses:
+        '202':
+          description: Payment accepted (COMPLETED immediately or PENDING Kafka settlement)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/YankiPaymentResponse'
+        '400':
+          description: Business rule violation (same sender/receiver, insufficient wallet balance, inactive wallet)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Sender or receiver wallet not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /yanki/payments/{transactionId}:
+    get:
+      tags:
+        - Yanki Payments
+      summary: Query the current status of a Yanki payment (PENDING, COMPLETED, FAILED)
+      operationId: getPaymentByTransactionId
+      parameters:
+        - name: transactionId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Payment record found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/YankiPaymentResponse'
+        '404':
+          description: Payment record not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /yanki/payments/phone/{phoneNumber}:
+    get:
+      tags:
+        - Yanki Payments
+      summary: Retrieve sent and received Yanki payments for a phone number
+      operationId: getPaymentsByPhoneNumber
+      parameters:
+        - name: phoneNumber
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Stream of Yanki payment records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/YankiPaymentResponse'
+
+components:
+  schemas:
+    YankiDocumentType:
+      type: string
+      enum:
+        - DNI
+        - CEX
+        - PASSPORT
+
+    YankiWalletStatus:
+      type: string
+      enum:
+        - ACTIVE
+        - BLOCKED
+        - CLOSED
+
+    YankiPaymentStatus:
+      type: string
+      enum:
+        - PENDING
+        - COMPLETED
+        - FAILED
+
+    YankiWalletRequest:
+      type: object
+      required:
+        - documentType
+        - documentNumber
+        - phoneNumber
+        - imei
+        - email
+      properties:
+        documentType:
+          $ref: '#/components/schemas/YankiDocumentType'
+        documentNumber:
+          type: string
+          example: '71234567'
+        phoneNumber:
+          type: string
+          example: '+51987654321'
+        imei:
+          type: string
+          example: '356938035643809'
+        email:
+          type: string
+          format: email
+          example: daniel.yanki@pivotbank.pe
+        initialBalance:
+          type: number
+          format: double
+          minimum: 0.00
+          default: 0.00
+
+    YankiWalletUpdateRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        imei:
+          type: string
+        status:
+          $ref: '#/components/schemas/YankiWalletStatus'
+
+    LinkDebitCardRequest:
+      type: object
+      required:
+        - debitCardId
+      properties:
+        debitCardId:
+          type: string
+
+    TopUpRequest:
+      type: object
+      required:
+        - amount
+      properties:
+        amount:
+          type: number
+          format: double
+          minimum: 0.01
+
+    YankiWalletResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        documentType:
+          $ref: '#/components/schemas/YankiDocumentType'
+        documentNumber:
+          type: string
+        phoneNumber:
+          type: string
+        imei:
+          type: string
+        email:
+          type: string
+        balance:
+          type: number
+        linkedDebitCardId:
+          type: string
+          nullable: true
+        status:
+          $ref: '#/components/schemas/YankiWalletStatus'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    YankiPaymentRequest:
+      type: object
+      required:
+        - senderPhoneNumber
+        - receiverPhoneNumber
+        - amount
+      properties:
+        senderPhoneNumber:
+          type: string
+          example: '+51987654321'
+        receiverPhoneNumber:
+          type: string
+          example: '+51912345678'
+        currency:
+          type: string
+          enum: [PEN, USD]
+          default: PEN
+        amount:
+          type: number
+          format: double
+          minimum: 0.01
+        description:
+          type: string
+          example: Lunch split
+
+    YankiPaymentResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        transactionId:
+          type: string
+        senderPhoneNumber:
+          type: string
+        receiverPhoneNumber:
+          type: string
+        currency:
+          type: string
+        amount:
+          type: number
+        description:
+          type: string
+        status:
+          $ref: '#/components/schemas/YankiPaymentStatus'
+        failureReason:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    ErrorResponse:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        status:
+          type: integer
+        error:
+          type: string
+        message:
+          type: string
+        path:
+          type: string
