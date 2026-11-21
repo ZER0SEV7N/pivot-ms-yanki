@@ -40,16 +40,17 @@ public class CreateYankiWalletUseCaseImpl implements CreateYankiWalletUseCase {
                     walletRepository.existsByDocumentNumber(wallet.getDocumentNumber()),
                     // Lambda function to handle the results of the uniqueness checks
                     (phoneExists, imeiExists, docExists) -> {
-                      // If any of the uniqueness checks return true, throw a DuplicateWalletException
+                      // Throw if any uniqueness check failed
                       if (Boolean.TRUE.equals(phoneExists)) {
                         throw new DuplicateWalletException(
-                                "Phone number is already registered in Yanki: " + wallet.getPhoneNumber());
+                                "Phone number is already registered in Yanki: "
+                                        + wallet.getPhoneNumber());
                       }
-                      // If the IMEI is already registered, throw a DuplicateWalletException
                       if (Boolean.TRUE.equals(imeiExists)) {
-                        throw new DuplicateWalletException("Device IMEI is already registered in Yanki.");
+                        throw new DuplicateWalletException(
+                                "Device IMEI is already registered in Yanki.");
                       }
-                      // If the document number is already registered, throw a DuplicateWalletException
+                      // Throw if the document number already exists
                       if (Boolean.TRUE.equals(docExists)) {
                         throw new DuplicateWalletException(
                                 "Document number is already registered in Yanki.");

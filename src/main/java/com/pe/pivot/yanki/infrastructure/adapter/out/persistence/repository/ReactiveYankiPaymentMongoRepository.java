@@ -24,7 +24,7 @@ public interface ReactiveYankiPaymentMongoRepository
    *
    * @param senderPhoneNumber - the phone number of the sender to search for
    * @param receiverPhoneNumber - the phone number of the receiver to search for
-   * @return - a Flux emitting all YankiPaymentDocuments matching either the sender or receiver phone number
+   * @return - a Flux emitting all YankiPaymentDocuments matching either phone number
    */
   Flux<YankiPaymentDocument> findBySenderPhoneNumberOrReceiverPhoneNumber(
           String senderPhoneNumber, String receiverPhoneNumber);

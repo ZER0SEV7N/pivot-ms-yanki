@@ -37,12 +37,11 @@ public class YankiWalletDomainInitializer {
   }
 
   /**
-   * Validates the document number based on its type (DNI, CE, PASSPORT) and throws a
+   * Validates the document number based on its type (DNI, CE, PASSPORT).
    *
    * @param type - the type of identification document (DNI, CE, PASSPORT)
    * @param number - the identification document number to validate
    * @throws BusinessRuleException if the document number does not conform to the expected format
-   *                               for the given document type
    */
   private void validateDocument(YankiDocumentType type, String number) {
     // Validate that the document number is not null or empty

@@ -34,9 +34,9 @@ public class CachedYankiWalletRepositoryAdapter implements YankiWalletRepository
   /**
    * Constructor for CachedYankiWalletRepositoryAdapter.
    *
-   * @param delegate - the YankiWalletRepositoryPort implementation to delegate persistence operations to
+   * @param delegate - the repository implementation to delegate persistence operations to
    * @param walletRedisTemplate - the ReactiveRedisTemplate for caching YankiWallets
-   * @param ttlMinutes - the time-to-live for cached entries in minutes, configurable via application properties
+   * @param ttlMinutes - the time-to-live for cached entries in minutes
    */
   public CachedYankiWalletRepositoryAdapter(
           @Qualifier("yankiWalletPersistenceAdapter") YankiWalletRepositoryPort delegate,
@@ -80,7 +80,8 @@ public class CachedYankiWalletRepositoryAdapter implements YankiWalletRepository
     // Attempt to retrieve the YankiWallet from Redis cache first
     return RxJava3Adapter.monoToMaybe(
                     walletRedisTemplate.opsForValue().get(key)
-                            .doOnNext(w -> log.debug("Redis cache HIT for Yanki phone: {}", phoneNumber))
+                            .doOnNext(w -> log.debug(
+                                    "Redis cache HIT for Yanki phone: {}", phoneNumber))
                             .onErrorResume(ex -> {
                               log.warn("Redis read failed for {}, falling back to MongoDB: {}",
                                       key, ex.getMessage());

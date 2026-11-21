@@ -30,7 +30,7 @@ public interface YankiPaymentRepositoryPort {
    * Finds all YankiPayment records associated with a specific phone number.
    *
    * @param phoneNumber - the phone number associated with the YankiPayments
-   * @return - a Flowable emitting all YankiPayment domain objects associated with the given phone number
+   * @return - a Flowable emitting all YankiPayment objects for the given phone number
    */
   Flowable<YankiPayment> findByPhoneNumber(String phoneNumber);
 }

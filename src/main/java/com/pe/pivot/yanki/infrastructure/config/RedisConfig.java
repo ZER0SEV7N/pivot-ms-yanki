@@ -16,7 +16,8 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 public class RedisConfig {
 
   /**
-   * Creates a ReactiveRedisTemplate for YankiWallet objects, using String keys and JSON-serialized values.
+   * Creates a ReactiveRedisTemplate for YankiWallet objects, using String keys
+   * and JSON-serialized values.
    *
    * @param factory - the ReactiveRedisConnectionFactory to create connections to Redis
    * @return - a ReactiveRedisTemplate configured for YankiWallet objects

@@ -25,11 +25,11 @@ import org.springframework.web.server.ServerWebExchange;
 public class GlobalExceptionHandler {
 
   /**
-   * Handles exceptions for not found resources, such as WalletNotFoundException and
+   * Handles exceptions for not found resources, such as WalletNotFoundException.
    *
    * @param ex - the exception instance
    * @param exchange - the ServerWebExchange providing request context
-   * @return - a Single emitting a ResponseEntity with ErrorResponse and HTTP status 404 (Not Found)
+   * @return - a Single emitting a ResponseEntity with status 404 (Not Found)
    */
   @ExceptionHandler({WalletNotFoundException.class, PaymentNotFoundException.class})
   public Single<ResponseEntity<ErrorResponse>> handleNotFound(
@@ -39,11 +39,11 @@ public class GlobalExceptionHandler {
   }
 
   /**
-   * Handles exceptions for business rule violations, such as DuplicateWalletException and
+   * Handles duplicate wallet conflicts, such as DuplicateWalletException.
    *
    * @param ex - the exception instance
    * @param exchange - the ServerWebExchange providing request context
-   * @return - a Single emitting a ResponseEntity with ErrorResponse and HTTP status 409 (Conflict)
+   * @return - a Single emitting a ResponseEntity with status 409 (Conflict)
    */
   @ExceptionHandler(DuplicateWalletException.class)
   public Single<ResponseEntity<ErrorResponse>> handleDuplicate(
@@ -57,7 +57,7 @@ public class GlobalExceptionHandler {
    *
    * @param ex - the exception instance
    * @param exchange - the ServerWebExchange providing request context
-   * @return - a Single emitting a ResponseEntity with ErrorResponse and HTTP status 400 (Bad Request)
+   * @return - a Single emitting a ResponseEntity with status 400 (Bad Request)
    */
   @ExceptionHandler(BusinessRuleException.class)
   public Single<ResponseEntity<ErrorResponse>> handleBusinessRule(
@@ -71,7 +71,7 @@ public class GlobalExceptionHandler {
    *
    * @param ex - the exception instance containing validation errors
    * @param exchange - the ServerWebExchange providing request context
-   * @return - a Single emitting a ResponseEntity with ErrorResponse and HTTP status 400 (Bad Request)
+   * @return - a Single emitting a ResponseEntity with status 400 (Bad Request)
    */
   @ExceptionHandler(WebExchangeBindException.class)
   public Single<ResponseEntity<ErrorResponse>> handleValidationErrors(
@@ -88,7 +88,7 @@ public class GlobalExceptionHandler {
    *
    * @param ex - the exception instance
    * @param exchange - the ServerWebExchange providing request context
-   * @return - a Single emitting a ResponseEntity with ErrorResponse and HTTP status 500 (Internal Server Error)
+   * @return - a Single emitting a ResponseEntity with status 500 (Internal Server Error)
    */
   @ExceptionHandler(Exception.class)
   public Single<ResponseEntity<ErrorResponse>> handleGenericException(

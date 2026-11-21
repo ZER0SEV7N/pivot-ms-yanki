@@ -1,13 +1,22 @@
 package com.pe.pivot.yanki;
 
-import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-@SpringBootTest
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+/**
+ * Smoke test for MsYankiApplication class definition.
+ */
 class MsYankiApplicationTests {
 
-	@Test
-	void contextLoads() {
-	}
+  @Test
+  @DisplayName("Should be instantiate MsYankiApplication successfully")
+  void shouldBeInstantiateApplicationSuccessfully() {
+    // Arrange & Act
+    MsYankiApplication application = new MsYankiApplication();
 
+    // Assert
+    assertNotNull(application);
+  }
 }

@@ -34,7 +34,7 @@ public class DeleteYankiWalletUseCaseImpl implements DeleteYankiWalletUseCase {
                     "Yanki wallet not found for phone number: " + phoneNumber)))
             .flatMapCompletable(existing -> {
 
-              // Validate that the wallet is not already CLOSED before proceeding with the logical deletion
+              // A CLOSED wallet cannot be deleted again
               if (existing.getStatus() == YankiWalletStatus.CLOSED) {
                 return Completable.error(
                         new BusinessRuleException("Yanki wallet is already CLOSED."));

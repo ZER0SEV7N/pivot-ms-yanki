@@ -18,6 +18,11 @@ public class YankiKafkaConsumerAdapter {
 
   private final HandleYankiPaymentResultUseCase handleResultUseCase;
 
+  /**
+   * Consumes a Yanki payment result event and delegates its handling.
+   *
+   * @param event - the payment result event received from Kafka
+   */
   @KafkaListener(
           topics = "${application.yanki.topics.payment-result}",
           groupId = "${spring.kafka.consumer.group-id}")

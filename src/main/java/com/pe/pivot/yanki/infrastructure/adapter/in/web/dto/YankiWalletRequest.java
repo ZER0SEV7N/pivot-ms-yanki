@@ -1,4 +1,3 @@
-// YankiWalletRequest.java
 package com.pe.pivot.yanki.infrastructure.adapter.in.web.dto;
 
 import com.pe.pivot.yanki.domain.model.YankiDocumentType;

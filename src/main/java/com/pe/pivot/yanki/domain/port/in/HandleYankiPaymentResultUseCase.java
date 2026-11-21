@@ -3,14 +3,17 @@ package com.pe.pivot.yanki.domain.port.in;
 import com.pe.pivot.yanki.domain.model.YankiPaymentResultCommand;
 import io.reactivex.rxjava3.core.Completable;
 
+/**
+ * Use case interface for handling asynchronous Yanki payment results.
+ */
 public interface HandleYankiPaymentResultUseCase {
 
   /**
-   * Handles the result of a Yanki payment operation,
-   * processing the provided command and returning a Completable to indicate completion or error.
+   * Handles the result of a Yanki payment operation and returns a Completable
+   * indicating completion or error.
    *
-   * @param command - the YankiPaymentResultCommand containing the details of the payment result to be handled
-   * @return - a Completable that completes when the payment result has been successfully handled, or emits an error if the handling fails
+   * @param command - the command containing the details of the payment result to handle
+   * @return - a Completable that completes when the result is handled successfully
    */
   Completable handleResult(YankiPaymentResultCommand command);
 }

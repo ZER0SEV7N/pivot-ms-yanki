@@ -25,11 +25,11 @@ public class HandleYankiPaymentResultUseCaseImpl implements HandleYankiPaymentRe
   private final YankiWalletRepositoryPort walletRepository;
 
   /**
-   * Handles the result of a Yanki payment transaction, updating the payment status and performing
-   * necessary compensations.
+   * Handles the result of a Yanki payment transaction, updating the payment status
+   * and performing necessary compensations.
    *
-   * @param command - the YankiPaymentResultCommand containing the details of the payment result to be handled
-   * @return - a Completable that completes when the payment result has been handled, or emits an error if the payment cannot be found or processed
+   * @param command - the command containing the details of the payment result to handle
+   * @return - a Completable that completes when the payment result has been handled
    */
   @Override
   public Completable handleResult(YankiPaymentResultCommand command) {
@@ -51,8 +51,7 @@ public class HandleYankiPaymentResultUseCaseImpl implements HandleYankiPaymentRe
    * to COMPLETED and crediting the receiver's wallet if necessary.
    *
    * @param payment - the YankiPayment object representing the payment to be finalized
-   * @return - a Completable that completes when the payment has been finalized,
-   * or emits an error if the wallet crediting fails
+   * @return - a Completable that completes when the payment has been finalized
    */
   private Completable finalizeCompleted(YankiPayment payment) {
     boolean receiverNeedsWalletCredit = payment.getReceiverDebitCardId() == null
@@ -74,12 +73,11 @@ public class HandleYankiPaymentResultUseCaseImpl implements HandleYankiPaymentRe
   }
 
   /**
-   * Finalizes a failed Yanki payment by updating its status to FAILED,
+   * Finalizes a failed Yanki payment by updating its status to FAILED.
    *
    * @param payment - the YankiPayment object representing the payment to be finalized
-   * @param reason - the reason for the payment failure, used for logging and record-keeping
-   * @return - a Completable that completes when the payment has been finalized and
-   * any necessary compensations have been made, or emits an error if the wallet refund fails
+   * @param reason - the reason for the payment failure, used for logging
+   * @return - a Completable that completes when the payment has been finalized and compensated
    */
   private Completable finalizeFailedWithCompensation(YankiPayment payment, String reason) {
     boolean senderNeedsWalletRefund = payment.getSenderDebitCardId() == null
@@ -87,7 +85,7 @@ public class HandleYankiPaymentResultUseCaseImpl implements HandleYankiPaymentRe
 
     // If the sender does not have a linked debit card,
     // refund their Yanki wallet with the payment amount
-    Completable refundStep = senderNeedsWalletRefund
+    final Completable refundStep = senderNeedsWalletRefund
             ? walletRepository.findByPhoneNumber(payment.getSenderPhoneNumber())
             .flatMapCompletable(wallet -> {
               log.warn("Compensating sender Yanki wallet {} for failed TxId {}",

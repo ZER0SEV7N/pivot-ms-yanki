@@ -32,16 +32,17 @@ public class SendYankiPaymentUseCaseImpl implements SendYankiPaymentUseCase {
   private final YankiPaymentFactory paymentFactory;
 
   /**
-   * Sends a Yanki payment from one wallet to another, handling both instant transfers and
+   * Sends a Yanki payment from one wallet to another, handling both instant
+   * transfers and asynchronous bank-card settlements.
    *
    * @param incoming - the YankiPayment object containing payment details to be sent
-   * @return - a Single emitting the resulting YankiPayment object after processing the payment
+   * @return - a Single emitting the resulting YankiPayment after processing
    */
   @Override
   public Single<YankiPayment> sendPayment(YankiPayment incoming) {
     validateRequest(incoming);
 
-    // Use Single.zip to concurrently find the sender and receiver wallets, then execute the transfer
+    // Find sender and receiver wallets concurrently, then execute the transfer
     return Single.zip(
                     findActiveWallet(incoming.getSenderPhoneNumber(), "Sender"),
                     findActiveWallet(incoming.getReceiverPhoneNumber(), "Receiver"),
@@ -74,7 +75,7 @@ public class SendYankiPaymentUseCaseImpl implements SendYankiPaymentUseCase {
    * @param phone - the phone number associated with the Yanki wallet to be found
    * @param roleLabel - a label indicating whether the wallet is for the sender or receiver,
    *                    used for error messages
-   * @return - a Single emitting the found YankiWallet if it exists and is active, or an error if not
+   * @return - a Single emitting the found active YankiWallet, or an error if not
    */
   private Single<YankiWallet> findActiveWallet(String phone, String roleLabel) {
     return walletRepository.findByPhoneNumber(phone)
@@ -89,12 +90,12 @@ public class SendYankiPaymentUseCaseImpl implements SendYankiPaymentUseCase {
   }
 
   /**
-   * Executes the transfer of funds between the sender and receiver Yanki wallets, handling both
+   * Executes the transfer of funds between the sender and receiver wallets.
    *
    * @param incoming - the YankiPayment object containing payment details to be processed
    * @param sender - the YankiWallet object representing the sender's wallet
    * @param receiver - the YankiWallet object representing the receiver's wallet
-   * @return - a Single emitting the resulting YankiPayment object after processing the transfer
+   * @return - a Single emitting the resulting YankiPayment after processing
    */
   private Single<YankiPayment> executeTransfer(
           YankiPayment incoming, YankiWallet sender, YankiWallet receiver) {
@@ -111,20 +112,21 @@ public class SendYankiPaymentUseCaseImpl implements SendYankiPaymentUseCase {
       return walletRepository.save(sender)
               .flatMap(s -> walletRepository.save(receiver))
               .flatMap(r -> paymentRepository.save(payment))
-              .flatMap(saved -> eventPublisher.publishPaymentResult(saved).andThen(Single.just(saved)));
+              .flatMap(saved -> eventPublisher.publishPaymentResult(saved)
+                      .andThen(Single.just(saved)));
     }
 
     // If either wallet has a linked bank card,
     // create a pending payment and publish a payment requested event for asynchronous processing
-    // The sender's wallet will be updated with the debit, and the receiver's wallet will be updated with the credit
+    // The sender wallet is debited; the receiver is credited asynchronously
     Single<YankiWallet> senderReady = sender.hasLinkedCard()
             ? Single.just(sender)
             : Single.defer(() -> {
-      sender.debit(incoming.getAmount());
-      return walletRepository.save(sender);
-    });
+              sender.debit(incoming.getAmount());
+              return walletRepository.save(sender);
+            });
 
-    // Create a pending YankiPayment object to represent the payment request, which will be processed asynchronously
+    // Create a PENDING payment to be processed asynchronously
     YankiPayment pendingPayment = paymentFactory.create(
             incoming, sender, receiver, YankiPaymentStatus.PENDING);
 

@@ -47,6 +47,22 @@ public class YankiWebMapper {
   }
 
   /**
+   * Maps a YankiPaymentRequest DTO to a YankiPayment domain object for processing.
+   *
+   * @param request - the YankiPaymentRequest DTO containing payment details
+   * @return - the corresponding YankiPayment domain object
+   */
+  public YankiPayment toDomain(YankiPaymentRequest request) {
+    return YankiPayment.builder()
+            .senderPhoneNumber(request.senderPhoneNumber())
+            .receiverPhoneNumber(request.receiverPhoneNumber())
+            .currency(request.currency())
+            .amount(request.amount())
+            .description(request.description())
+            .build();
+  }
+
+  /**
    * Maps a YankiWallet domain object to a YankiWalletResponse DTO for API response.
    *
    * @param wallet - the YankiWallet domain object to be converted
@@ -65,22 +81,6 @@ public class YankiWebMapper {
             .status(wallet.getStatus())
             .createdAt(wallet.getCreatedAt())
             .updatedAt(wallet.getUpdatedAt())
-            .build();
-  }
-
-  /**
-   * Maps a YankiPaymentRequest DTO to a YankiPayment domain object for processing.
-   *
-   * @param request - the YankiPaymentRequest DTO containing payment details
-   * @return - the corresponding YankiPayment domain object
-   */
-  public YankiPayment toDomain(YankiPaymentRequest request) {
-    return YankiPayment.builder()
-            .senderPhoneNumber(request.senderPhoneNumber())
-            .receiverPhoneNumber(request.receiverPhoneNumber())
-            .currency(request.currency())
-            .amount(request.amount())
-            .description(request.description())
             .build();
   }
 

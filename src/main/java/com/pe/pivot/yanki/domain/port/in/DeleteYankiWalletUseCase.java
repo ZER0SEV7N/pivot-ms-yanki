@@ -2,6 +2,9 @@ package com.pe.pivot.yanki.domain.port.in;
 
 import io.reactivex.rxjava3.core.Completable;
 
+/**
+ * Use case interface for deleting (soft-closing) a Yanki wallet.
+ */
 public interface DeleteYankiWalletUseCase {
 
   /**

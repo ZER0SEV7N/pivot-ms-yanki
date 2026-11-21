@@ -23,16 +23,17 @@ public class YankiKafkaProducerAdapter implements YankiEventPublisherPort {
   // KafkaTemplate for publishing events to Kafka topics
   private final KafkaTemplate<String, Object> kafkaTemplate;
 
-  // Topic names for payment requested and payment result events, injected from application properties
+  // Topic names for payment events, injected from application properties
   @Value("${application.yanki.topics.payment-requested}")
   private String paymentRequestedTopic;
 
-   // Topic name for payment result events, injected from application properties
+  // Topic name for payment result events, injected from application properties
   @Value("${application.yanki.topics.payment-result}")
   private String paymentResultTopic;
 
   /**
-   * Publishes a YankiPaymentRequestedEvent to the configured Kafka topic when a payment is requested.
+   * Publishes a YankiPaymentRequestedEvent to the configured Kafka topic when a
+   * payment is requested.
    *
    * @param payment - the YankiPayment object containing the payment details
    * @return - a Completable that completes when the event is successfully published

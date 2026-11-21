@@ -50,7 +50,7 @@ public class UpdateYankiWalletUseCaseImpl implements UpdateYankiWalletUseCase {
   /**
    * Links a DebitCard to an existing Yanki wallet identified by the provided phone number.
    *
-   * @param phoneNumber - the phone number associated with the Yanki wallet to which the debit card will be linked
+   * @param phoneNumber - the phone number associated with the wallet
    * @param debitCardId - the identifier of the debit card to be linked to the Yanki wallet
    * @return - a Single emitting the updated YankiWallet object with the linked debit card
    */
@@ -90,15 +90,16 @@ public class UpdateYankiWalletUseCaseImpl implements UpdateYankiWalletUseCase {
   /**
    * Finds a Yanki wallet by phone number and ensures it is modifiable (not CLOSED).
    *
-   * @param phoneNumber - the phone number associated with the Yanki wallet to be retrieved
-   * @return - a Single emitting the found YankiWallet object if it exists and is modifiable, or an error if not
+   * @param phoneNumber - the phone number associated with the Yanki wallet to retrieve
+   * @return - a Single emitting the found modifiable YankiWallet, or an error if not
    */
   private Single<YankiWallet> findModifiableWallet(String phoneNumber) {
     return walletRepository.findByPhoneNumber(phoneNumber)
             .switchIfEmpty(Single.error(new WalletNotFoundException(
                     "Yanki wallet not found for phone number: " + phoneNumber)))
             .flatMap(wallet -> wallet.getStatus() == YankiWalletStatus.CLOSED
-                    ? Single.error(new BusinessRuleException("Cannot modify a CLOSED Yanki wallet."))
+                    ? Single.error(new BusinessRuleException(
+                            "Cannot modify a CLOSED Yanki wallet."))
                     : Single.just(wallet));
   }
 }

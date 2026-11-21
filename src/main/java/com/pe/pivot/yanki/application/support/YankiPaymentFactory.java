@@ -22,16 +22,18 @@ public class YankiPaymentFactory {
   private static final String DEFAULT_CURRENCY = "PEN";
 
   /**
-   * Creates a new YankiPayment domain object, initializing its fields based on the provided
+   * Creates a new YankiPayment domain object, initializing its fields based on
+   * the provided data.
    *
    * @param incoming - the incoming YankiPayment containing amount, currency, and description
-   * @param sender - the YankiWallet of the sender, providing phone number and linked debit card ID
-   * @param receiver - the YankiWallet of the receiver, providing phone number and linked debit card ID
+   * @param sender - the YankiWallet of the sender, providing phone and debit card ID
+   * @param receiver - the YankiWallet of the receiver, providing phone and debit card ID
    * @param status - the initial status of the payment (e.g., PENDING, COMPLETED, FAILED)
-   * @return - a fully constructed YankiPayment object with a unique transaction ID and timestamps
+   * @return - a fully constructed YankiPayment with a unique transaction ID and timestamps
    */
   public YankiPayment create(
-          YankiPayment incoming, YankiWallet sender, YankiWallet receiver, YankiPaymentStatus status) {
+          YankiPayment incoming, YankiWallet sender, YankiWallet receiver,
+          YankiPaymentStatus status) {
     Instant now = Instant.now();
     String datePart = LocalDate.now(ZoneOffset.UTC).format(DATE_FORMAT);
     String randomPart = UUID.randomUUID().toString().substring(0, 8).toUpperCase();
@@ -45,7 +47,8 @@ public class YankiPaymentFactory {
             .receiverDebitCardId(receiver.getLinkedDebitCardId())
             .currency(Optional.ofNullable(incoming.getCurrency()).orElse(DEFAULT_CURRENCY))
             .amount(incoming.getAmount())
-            .description(Optional.ofNullable(incoming.getDescription()).orElse("Yanki mobile payment"))
+            .description(Optional.ofNullable(incoming.getDescription())
+                    .orElse("Yanki mobile payment"))
             .status(status)
             .createdAt(now)
             .updatedAt(now)
